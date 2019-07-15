@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+    
+<configuration>
+
+	<typeAliases>
+		<typeAlias type="com.exciform.board.dto.BoardDto" alias="boardDto"/>
+		<typeAlias type="com.exciform.board.dto.UserDto" alias="userDto"/>
+		<typeAlias type="com.exciform.board.dto.CommentDto" alias="commentDto"/>
+		<typeAlias type="com.exciform.board.dto.PageMakerDto" alias="pageMakerDto"/>
+		<typeAlias type="com.exciform.board.dto.BoardTypeDto" alias="boardTypeDto"/>
+		<typeAlias type="com.exciform.board.dto.SearchDto" alias="searchDto"/>
+		<typeAlias type="com.exciform.board.dto.BoardFileDto" alias="boardFileDto"/>
+		<typeAlias type="com.exciform.board.dto.ChartDto" alias="chartDto"/>
+	</typeAliases>
+ 
+</configuration>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="boardMapper">
+
+
+	<select id="getBoardList" parameterType="searchDto"
+		resultType="boardDto">
+		SELECT a.rnum
+		,a.BOARD_NO
+		,a.BOARD_TITLE
+		,a.BOARD_CONTENT
+		,a.REG_DT
+		,a.REG_ID
+		,a.USER_NO
+		,a.BOARD_TYPE
+		,a.VIEW_COUNT
+		,a.WRITER_NAME
+		,a.BOARD_TYPE_NAME
+		FROM (SELECT ROW_NUMBER() OVER(ORDER BY b.REG_DT DESC) as rnum
+					,b.BOARD_NO
+					,b.BOARD_TITLE
+					,b.BOARD_CONTENT
+					,b.REG_DT
+					,b.REG_ID
+					,b.USER_NO
+					,b.BOARD_TYPE
+					,b.VIEW_COUNT
+					,c.USER_NAME as WRITER_NAME
+					,d.TYPE_NAME as BOARD_TYPE_NAME
+					FROM HW_BOARD b
+					INNER JOIN HW_USER c on
+					b.USER_NO = c.USER_NO
+					INNER JOIN HW_BOARD_TYPE d on b.BOARD_TYPE =
+					d.TYPE_CODE
+					<where>
+						<if test="period_yn == true">
+							AND b.REG_DT BETWEEN #{start_date} AND #{end_date}
+						</if>
+						<if test="board_type != null and !board_type.equals('default')">
+							AND b.BOARD_TYPE = #{board_type}
+						</if>
+						<if test="search_type != null and !search_type.equals('default')">
+							<if test="search_type.equals('board_title')">
+								AND b.BOARD_TITLE LIKE '%'||#{search_word}||'%'
+							</if>
+							<if test="search_type.equals('board_writer')">
+								AND c.USER_NAME LIKE '%'||#{search_word}||'%'
+							</if>
+						</if>
+					</where>
+		) a
+		WHERE a.rnum BETWEEN #{start_board} AND #{end_board}
+
+	</select>
+
+	<select id="getBoardTotalCount" resultType="int">
+		SELECT COUNT(*)
+		FROM
+		HW_BOARD
+	</select>
+
+
+	<select id="getBoardDetail" parameterType="int"
+		resultType="boardDto">
+		SELECT a.BOARD_NO
+		,a.BOARD_TITLE
+		,a.BOARD_CONTENT
+		,a.REG_DT
+		,a.REG_ID
+		,a.USER_NO
+		,a.BOARD_TYPE
+		,a.VIEW_COUNT
+		,b.USER_NAME as
+		WRITER_NAME
+		,c.TYPE_NAME as BOARD_TYPE_NAME
+		FROM HW_BOARD a
+		INNER JOIN
+		HW_USER b on a.USER_NO = b.USER_NO
+		INNER JOIN HW_BOARD_TYPE c on
+		a.BOARD_TYPE = c.TYPE_CODE
+		WHERE a.BOARD_NO = #{board_no}
+	</select>
+
+
+	<select id="getBoardFileList" parameterType="int"
+		resultType="boardFileDto">
+		SELECT *
+		FROM HW_FILE
+		WHERE BOARD_NO = #{board_no}
+	</select>
+
+
+	<select id="getCommentList" parameterType="int"
+		resultType="commentDto">
+		SELECT
+		a.comment_no
+		,a.board_no
+		,a.comment_content
+		,a.reg_dt
+		,a.user_no
+		,a.group_no
+		,a.parent_yn
+		,b.user_name
+		FROM HW_COMMENT a INNER JOIN HW_USER b ON
+		a.USER_NO = b.USER_NO
+		WHERE BOARD_NO = #{board_no}
+		ORDER BY GROUP_NO,
+		REG_DT ASC
+	</select>
+
+
+	<insert id="insertComment" parameterType="commentDto">
+		<selectKey resultType="int" keyProperty="comment_no"
+			order="BEFORE">
+			SELECT NVL(MAX(comment_no), 0)+1 FROM HW_COMMENT
+		</selectKey>
+
+		INSERT INTO HW_COMMENT
+		VALUES(
+		#{comment_no}
+		,#{board_no}
+		,#{comment_content}
+		,TO_DATE(#{reg_dt},'YY/MM/DD HH24:MI:SS')
+		,#{user_no}
+		<if test="parent_yn == 'Y'.toString()">
+			,#{comment_no}
+		</if>
+		<if test="parent_yn == 'N'.toString()">
+			,#{group_no}
+		</if>
+		,#{parent_yn}
+		)
+	</insert>
+
+
+	<update id="updateViewCount" parameterType="int">
+		UPDATE HW_BOARD
+		SET
+		VIEW_COUNT = VIEW_COUNT+1
+		WHERE BOARD_NO = #{board_no}
+	</update>
+
+
+	<insert id="insertBoard" parameterType="boardDto">
+		<selectKey resultType="int" keyProperty="board_no"
+			order="BEFORE">
+			SELECT NVL(MAX(board_no), 0)+1 FROM HW_BOARD
+		</selectKey>
+
+		INSERT INTO HW_BOARD
+		VALUES(
+		#{board_no}
+		,#{board_title}
+		,#{board_content}
+		,TO_DATE(#{reg_dt},'YY/MM/DD HH24:MI:SS')
+		,#{reg_id}
+		,#{user_no}
+		,#{board_type}
+		,#{view_count}
+		)
+	</insert>
+
+	<insert id="insertBoardFile" parameterType="boardFileDto">
+		<selectKey resultType="int" keyProperty="file_no"
+			order="BEFORE">
+			SELECT NVL(MAX(file_no), 0)+1 FROM HW_FILE
+		</selectKey>
+
+		INSERT INTO HW_FILE
+		VALUES(
+		#{file_no}
+		,#{originalfile_name}
+		,#{physicalfile_name}
+		,#{physicalfile_path}
+		,#{file_ext}
+		,#{board_no}
+		)
+	</insert>
+
+
+	<update id="updateBoard" parameterType="boardDto">
+		UPDATE HW_BOARD
+		SET
+		BOARD_TITLE = #{board_title}
+		,BOARD_CONTENT = #{board_content}
+		,BOARD_TYPE = #{board_type}
+		WHERE BOARD_NO = #{board_no}
+	</update>
+
+
+	<delete id="deleteBoard" parameterType="int">
+		DELETE FROM HW_BOARD
+		WHERE BOARD_NO = #{board_no}
+	</delete>
+
+	<select id="getBoardTypeList" resultType="boardTypeDto">
+		SELECT *
+		FROM
+		HW_BOARD_TYPE
+	</select>
+</mapper>
